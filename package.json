@@ -2,15 +2,19 @@
   "name": "xlsx-stream-writer",
   "version": "0.2.6",
   "description": "Create xlsx in streaming mode in browser and nodejs",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "test": "jest --watch"
+    "build": "rimraf dist && tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon --exec ts-node src/xlsx-stream-writer.ts --watch src",
+    "test": "jest --watch",
+    "coverage": "jest --coverage"
   },
   "author": "Valery Baranov <valery@baranov.xyz> (http://baranov.xyz)",
   "license": "MIT",
   "dependencies": {
     "crc": "^3.8.0",
-    "jszip": "^3.1.5",
+    "jszip": "^3.2.1",
     "stream-browserify": "^2.0.2"
   },
   "repository": {
@@ -21,9 +25,21 @@
     "excel",
     "xlsx",
     "stream",
-    "write"
+    "write",
+    "typescript"
   ],
   "devDependencies": {
-    "jest": "^23.6.0"
+    "@types/crc": "^3.4.0",
+    "@types/jest": "^24.0.15",
+    "@types/jszip": "^3.1.6",
+    "@types/node": "^12.0.12",
+    "jest": "^24.8.0",
+    "nodemon": "^1.19.1",
+    "prettier": "^1.18.2",
+    "rimraf": "^2.6.3",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.3.0",
+    "tslint": "^5.18.0",
+    "typescript": "^3.5.2"
   }
 }

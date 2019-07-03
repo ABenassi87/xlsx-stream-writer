@@ -1,33 +1,33 @@
-const helpers = require("./helpers");
+import * as helpers from './helpers';
 
-const replaceRegex = /\s+/g;
-const replaceReSec = />\s+</g;
+const replaceRegex: RegExp = /\s+/g;
+const replaceReSec: RegExp = />\s+</g;
 
-const header = `
+export const header: string = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
             mc:Ignorable="x14ac"
             xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac">`;
 
-const bottom = "</styleSheet>";
+export const bottom: string = '</styleSheet>';
 
-const getFillXmlHeader = numFills => `<fills count="${numFills}">`;
-const fillXmlDefault = [
+export const getFillXmlHeader = (numFills: number) => `<fills count="${numFills}">`;
+export const fillXmlDefault: string[] = [
   `<fill>
   <patternFill patternType="none"/>
   </fill>`,
   `<fill>
   <patternFill patternType="gray125"/>
-  </fill>`,
+  </fill>`
 ];
 
-const getFillXml = fillColor =>
+export const getFillXml = (fillColor: string) =>
   `<fill><patternFill patternType="solid"><fgColor rgb="${fillColor}"/><bgColor indexed="64"/></patternFill></fill>`;
 
-const fillXmlBottom = "</fills>";
+export const fillXmlBottom: string = '</fills>';
 
-const fontsXml = `<fonts count="1" x14ac:knownFonts="1">
+export const fontsXml: string = `<fonts count="1" x14ac:knownFonts="1">
         <font>
             <sz val="11"/>
             <color theme="1"/>
@@ -37,7 +37,7 @@ const fontsXml = `<fonts count="1" x14ac:knownFonts="1">
         </font>
     </fonts>`;
 
-const bordersXml = `
+export const bordersXml: string = `
     <borders count="1">
         <border>
             <left/>
@@ -48,24 +48,22 @@ const bordersXml = `
         </border>
     </borders>`;
 
-const cellStyleXfs = `<cellStyleXfs count="1">
+export const cellStyleXfs: string = `<cellStyleXfs count="1">
   <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
   </cellStyleXfs>`;
 
-const getCellXfXml = ({ numFmtId, fillId }) =>
-  `<xf numFmtId="${numFmtId === undefined ? 0 : numFmtId}" fontId="0" fillId="${
-    fillId === undefined ? 0 : fillId
+export const getCellXfXml = (data: { numFmtId: number; fillId: number }) =>
+  `<xf numFmtId="${data.numFmtId === undefined ? 0 : data.numFmtId}" fontId="0" fillId="${
+    data.fillId === undefined ? 0 : data.fillId
   }" borderId="0" xfId="0"/>`;
 
-const cellXfXmlDefault = [
-  `<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>`,
-];
+export const cellXfXmlDefault: string[] = [`<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>`];
 
-function getCellXfsBlock(cellXfs) {
-  return `<cellXfs count="${cellXfs.length}">${cellXfs.join("")}</cellXfs>`;
+export function getCellXfsBlock(cellXfs: any[]): string {
+  return `<cellXfs count="${cellXfs.length}">${cellXfs.join('')}</cellXfs>`;
 }
 
-const restXml = `<cellStyles count="1">
+export const restXml: string = `<cellStyles count="1">
     <cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
     <dxfs count="0"/>
     <tableStyles count="0" defaultTableStyle="TableStyleMedium2"
@@ -77,30 +75,30 @@ const restXml = `<cellStyles count="1">
         </ext>
     </extLst>`;
 
-const compact = xml =>
+export const compact = (xml: string) =>
   xml
-    .replace(replaceRegex, " ")
-    .replace(replaceReSec, "><")
+    .replace(replaceRegex, ' ')
+    .replace(replaceReSec, '><')
     .trim();
 
 /**
  * @param { Array<Object> } styles
  * each style could have { fill, format }
  * Numbering Formats
-   Fonts
-   Fills
-   Borders
-   Cell Style Formats
-   Cell Formats <== cell styleindex is referring to one of these
-   ...the rest
+ Fonts
+ Fills
+ Borders
+ Cell Style Formats
+ Cell Formats <== cell styleindex is referring to one of these
+ ...the rest
  * @returns { String } styles.xml string
  * */
-function getStyles(styles) {
+export function getStyles(styles: any[]): string {
   const NUM_FORMATS_START = 166;
-  const numFormatsXml = [];
-  const numFormatsIndex = {};
+  const numFormatsXml: string[] = [];
+  const numFormatsIndex: any = {};
   const fillsXml = fillXmlDefault;
-  const fillsIndex = {};
+  const fillsIndex: any = {};
   const cellXfsXml = cellXfXmlDefault;
   styles.forEach(style => {
     const { fill, format } = style;
@@ -108,9 +106,7 @@ function getStyles(styles) {
       if (numFormatsIndex[format] === undefined) {
         const formatIndex = numFormatsXml.length + NUM_FORMATS_START;
         numFormatsIndex[format] = formatIndex;
-        numFormatsXml.push(
-          getFormatXml(helpers.escapeXmlExtended(format), formatIndex),
-        );
+        numFormatsXml.push(getFormatXml(helpers.escapeXmlExtended(format), formatIndex));
       }
     }
     if (fill !== undefined) {
@@ -122,12 +118,12 @@ function getStyles(styles) {
     cellXfsXml.push(
       getCellXfXml({
         numFmtId: numFormatsIndex[format],
-        fillId: fillsIndex[fill],
-      }),
+        fillId: fillsIndex[fill]
+      })
     );
   });
 
-  let xml = "";
+  let xml = '';
   xml += header;
   xml += getNumFormatsXmlBlock(numFormatsXml);
   xml += fontsXml;
@@ -140,16 +136,13 @@ function getStyles(styles) {
   return compact(xml);
 }
 
-const getFormatXml = (format, length) =>
-  `<numFmt numFmtId="${length}" formatCode="${format}"/>`;
+export const getFormatXml = (format: any, length: number) => `<numFmt numFmtId="${length}" formatCode="${format}"/>`;
 
-function getNumFormatsXmlBlock(formats) {
-  if (!Array.isArray(formats) || !formats.length) return "";
-  return `<numFmts count="${formats.length}">${formats.join("")}</numFmts>`;
+export function getNumFormatsXmlBlock(formats: any[]): string {
+  if (!Array.isArray(formats) || !formats.length) return '';
+  return `<numFmts count="${formats.length}">${formats.join('')}</numFmts>`;
 }
 
-function getFillXmlBlock(fillsXml) {
-  return getFillXmlHeader(fillsXml.length) + fillsXml.join("") + fillXmlBottom;
+export function getFillXmlBlock(fillsXml: string[]): string {
+  return getFillXmlHeader(fillsXml.length) + fillsXml.join('') + fillXmlBottom;
 }
-
-module.exports = { getStyles };
