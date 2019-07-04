@@ -5,7 +5,6 @@ import * as xmlBlobs from './xml/blobs';
 import * as xmlParts from './xml/parts';
 import { escapeXml, getCellAddress, wrapRowsInStream } from './helpers';
 import { getStyles } from './styles';
-// const { crc32 } = require("crc");
 
 const defaultOptions: XlsxStreamWriterOptions = {
   inlineStrings: false,
@@ -15,8 +14,8 @@ const defaultOptions: XlsxStreamWriterOptions = {
 
 export class XlsxStreamWriter {
   options: XlsxStreamWriterOptions;
-  sheetXmlStream: NodeJS.ReadableStream;
-  sharedStringsXmlStream: NodeJS.ReadableStream;
+  sheetXmlStream: Readable;
+  sharedStringsXmlStream: Readable;
   sharedStringsArr: string[];
   sharedStringsMap: SharedStringsMap;
   sharedStringsHashMap: any;
@@ -56,6 +55,10 @@ export class XlsxStreamWriter {
     // TODO why do we need to call .toString in case we want to inline strings?
     this.sheetXmlStream = this.options.inlineStrings ? rowsStream.pipe(rowsToXml).pipe(tsToString) : rowsStream.pipe(rowsToXml);
     this.sharedStringsXmlStream = this._getSharedStringsXmlStream();
+  }
+
+  getReadable(): Readable {
+    return this.sheetXmlStream;
   }
 
   _getToStringTransformStream(): PassThrough {

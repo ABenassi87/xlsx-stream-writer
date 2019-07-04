@@ -1,4 +1,4 @@
-import { crc32 } from 'crc';
+/*import { crc32 } from 'crc';
 const NUM_TRIES = 100000;
 console.time('crc');
 const objCRC1: any = {};
@@ -10,4 +10,4 @@ Array.from({ length: NUM_TRIES }, (_, i) => ({
   else objCRC1[v.hash].count++;
 });
 console.timeEnd('crc');
-console.log(objCRC1.slice(0, 100));
+console.log(objCRC1.slice(0, 100));*/
