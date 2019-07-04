@@ -1,7 +1,7 @@
-const replaceRegex = /\s+/g;
-const replaceReSec = />\s+</g;
+const replaceRegex: RegExp = /\s+/g;
+const replaceReSec: RegExp = />\s+</g;
 
-const contentTypes = `
+export const contentTypes: string = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
     <Default Extension="rels"
@@ -16,22 +16,22 @@ const contentTypes = `
     <Override PartName="/xl/sharedStrings.xml"
               ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
 </Types>`
-  .replace(replaceRegex, " ")
-  .replace(replaceReSec, "><")
+  .replace(replaceRegex, ' ')
+  .replace(replaceReSec, '><')
   .trim();
 
-const rels = `
+export const rels: string = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
     <Relationship Id="rId1"
                   Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
                   Target="xl/workbook.xml"/>
 </Relationships>`
-  .replace(replaceRegex, " ")
-  .replace(replaceReSec, "><")
+  .replace(replaceRegex, ' ')
+  .replace(replaceReSec, '><')
   .trim();
 
-const workbook = `
+export const workbook: string = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
           xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
@@ -45,11 +45,11 @@ const workbook = `
     </sheets>
     <calcPr calcId="145621"/>
 </workbook>`
-  .replace(replaceRegex, " ")
-  .replace(replaceReSec, "><")
+  .replace(replaceRegex, ' ')
+  .replace(replaceReSec, '><')
   .trim();
 
-const workbookRels = `
+export const workbookRels: string = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
     <Relationship Id="rId1"
@@ -62,11 +62,11 @@ const workbookRels = `
                   Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"
                   Target="styles.xml"/>
 </Relationships>`
-  .replace(replaceRegex, " ")
-  .replace(replaceReSec, "><")
+  .replace(replaceRegex, ' ')
+  .replace(replaceReSec, '><')
   .trim();
 
-const styles = `
+export const styles: string = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -117,14 +117,6 @@ const styles = `
         </ext>
     </extLst>
 </styleSheet>`
-  .replace(replaceRegex, " ")
-  .replace(replaceReSec, "><")
+  .replace(replaceRegex, ' ')
+  .replace(replaceReSec, '><')
   .trim();
-
-module.exports = {
-  contentTypes,
-  rels,
-  workbook,
-  workbookRels,
-  styles,
-};
