@@ -1,15 +1,15 @@
 import { SharedStringsMap, XLSX, XlsxStreamWriterOptions } from './xlsx-stream-writer.models';
 import { PassThrough, Readable } from 'stream';
-import * as JSZip from 'jszip';
 import * as xmlBlobs from './xml/blobs';
 import * as xmlParts from './xml/parts';
 import { escapeXml, getCellAddress, wrapRowsInStream } from './helpers';
 import { getStyles } from './styles';
+import * as JSZip from 'jszip';
 
 const defaultOptions: XlsxStreamWriterOptions = {
   inlineStrings: false,
   styles: [],
-  styleIdFunc: (value: any, columnId: number, rowId: number) => 0
+  styleIdFunc: (value: any, columnId: number, rowId: number) => 0,
 };
 
 export class XlsxStreamWriter {
@@ -36,7 +36,7 @@ export class XlsxStreamWriter {
       'xl/workbook.xml': cleanUpXml(xmlBlobs.workbook),
       // "xl/styles.xml": cleanUpXml(xmlBlobs.styles),
       'xl/styles.xml': cleanUpXml(getStyles(this.options.styles)),
-      'xl/_rels/workbook.xml.rels': cleanUpXml(xmlBlobs.workbookRels)
+      'xl/_rels/workbook.xml.rels': cleanUpXml(xmlBlobs.workbookRels),
     };
   }
 
@@ -151,41 +151,38 @@ export class XlsxStreamWriter {
   // returns blob in a browser, buffer in nodejs
   getFile() {
     this._clearSharedStrings();
-    const zip = JSZip;
     // add all static files
-    Object.keys(this.xlsx).forEach(key => zip.file(key, this.xlsx[key]));
+    Object.keys(this.xlsx).forEach(key => JSZip.file(key, this.xlsx[key]));
 
     // add "xl/worksheets/sheet1.xml"
-    zip.file('xl/worksheets/sheet1.xml', this.sheetXmlStream);
+    JSZip.file('xl/worksheets/sheet1.xml', this.sheetXmlStream);
     // add "xl/sharedStrings.xml"
-    zip.file('xl/sharedStrings.xml', this.sharedStringsXmlStream);
+    JSZip.file('xl/sharedStrings.xml', this.sharedStringsXmlStream);
     this._clearSharedStrings();
 
     const isBrowser = typeof window !== 'undefined' && {}.toString.call(window) === '[object Window]';
 
     return new Promise((resolve, reject) => {
       if (isBrowser) {
-        zip
-          .generateAsync({
-            type: 'blob',
-            compression: 'DEFLATE',
-            compressionOptions: {
-              level: 4
-            },
-            streamFiles: true
-          })
+        JSZip.generateAsync({
+          type: 'blob',
+          compression: 'DEFLATE',
+          compressionOptions: {
+            level: 4,
+          },
+          streamFiles: true,
+        })
           .then(resolve)
           .catch(reject);
       } else {
-        zip
-          .generateAsync({
-            type: 'nodebuffer',
-            compression: 'DEFLATE',
-            compressionOptions: {
-              level: 4
-            },
-            streamFiles: true
-          })
+        JSZip.generateAsync({
+          type: 'nodebuffer',
+          compression: 'DEFLATE',
+          compressionOptions: {
+            level: 4,
+          },
+          streamFiles: true,
+        })
           .then(resolve)
           .catch(reject);
       }
