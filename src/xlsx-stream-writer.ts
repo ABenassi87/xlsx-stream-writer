@@ -57,10 +57,6 @@ export class XlsxStreamWriter {
     this.sharedStringsXmlStream = this._getSharedStringsXmlStream();
   }
 
-  getReadable(): Readable {
-    return this.sheetXmlStream;
-  }
-
   _getToStringTransformStream(): PassThrough {
     const ts = new PassThrough();
     ts._transform = (data, encoding, callback) => {

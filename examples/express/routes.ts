@@ -16,18 +16,19 @@ function generateFile(req: Request, res: Response) {
   logger.debug('data generated', rows);
   const xlsxWriter = new XlsxStreamWriter();
 
-  const streamOfRows = wrapRowsInStream(rows);
-
-  xlsxWriter.addRows(streamOfRows);
+  xlsxWriter.addRows(rows);
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats');
   res.setHeader('Content-Disposition', 'attachment; filename=' + 'example.xlsx');
 
-  const read: NodeJS.ReadableStream = xlsxWriter.getStream();
-
-  read.pipe(res);
-
-  read.on('data', data => res.write(data.toString())).on('end', () => res.end());
+  xlsxWriter
+    .getStream()
+    .pipe(res)
+    .on('finish', function() {
+      // JSZip generates a readable stream with a "end" event,
+      // but is piped here in a writable stream which emits a "finish" event.
+      res.end();
+    });
 }
 
 export default applicationRoutes;
