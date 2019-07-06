@@ -12,7 +12,7 @@ applicationRoutes.get('/generate', generateFile);
 
 function generateFile(req: Request, res: Response) {
   logger.debug('generateFile', req);
-  const rows = generateRandomData(500);
+  const rows = generateRandomData(50000);
   logger.debug('data generated', rows);
   const xlsxWriter = new XlsxStreamWriter();
 
@@ -20,7 +20,14 @@ function generateFile(req: Request, res: Response) {
 
   xlsxWriter.addRows(streamOfRows);
 
-  xlsxWriter.getFile().then(buffer => res.write(buffer));
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats');
+  res.setHeader('Content-Disposition', 'attachment; filename=' + 'example.xlsx');
+
+  const read: NodeJS.ReadableStream = xlsxWriter.getStream();
+
+  read.pipe(res);
+
+  read.on('data', data => res.write(data.toString())).on('end', () => res.end());
 }
 
 export default applicationRoutes;
