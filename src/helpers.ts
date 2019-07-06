@@ -55,3 +55,9 @@ export function escapeXmlExtended(str = ''): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 }
+
+export const isNil = (val: any) => val === undefined || val === null;
+
+export const is = (type: any, val: any) => ![, null].includes(val) && val.constructor === type;
+
+export const isArrayLike = (obj: any) => obj != null && typeof obj[Symbol.iterator] === 'function';

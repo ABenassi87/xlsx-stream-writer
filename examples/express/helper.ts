@@ -23,29 +23,31 @@ const htmlBody =
   '</body>\n' +
   '</html>\n';
 
-export function generateRandomData(count: number): any[] {
+export function generateRandomData(count: number, generateHeader = false): any[] {
   let dataArray: any[] = [];
-  const header = [
-    'firstName',
-    'lastName',
-    'streetAddress',
-    'birthdate',
-    'ssin',
-    'valid',
-    'city',
-    'state',
-    'country',
-    'email',
-    'avatar',
-    'card',
-    'userCard',
-    'transaction',
-    'test1',
-    'test2',
-    'test3',
-    'htmlBody',
-  ];
-  dataArray.push(header);
+  if (generateHeader) {
+    const header = [
+      'firstName',
+      'lastName',
+      'streetAddress',
+      'birthdate',
+      'ssin',
+      'valid',
+      'city',
+      'state',
+      'country',
+      'email',
+      'avatar',
+      'card',
+      'userCard',
+      'transaction',
+      'test1',
+      'test2',
+      'test3',
+      'htmlBody',
+    ];
+    dataArray.push(header);
+  }
   for (let i = 0; i < count; i++) {
     const data = [
       faker.name.firstName(),

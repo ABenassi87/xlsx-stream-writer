@@ -1,9 +1,6 @@
-import { Router } from 'express';
+import { Request, Response, Router } from 'express';
 import { generateRandomData } from './helper';
-
-import { Response, Request } from 'express';
 import { XlsxStreamWriter } from '../../src/xlsx-stream-writer';
-import { wrapRowsInStream } from '../../src/helpers';
 import logger from './logger';
 
 const applicationRoutes: Router = Router();
@@ -12,7 +9,7 @@ applicationRoutes.get('/generate', generateFile);
 
 function generateFile(req: Request, res: Response) {
   logger.debug('generateFile', req);
-  const rows = generateRandomData(50000);
+  const rows = generateRandomData(500, true);
   logger.debug('data generated', rows);
   const xlsxWriter = new XlsxStreamWriter();
 
@@ -29,6 +26,10 @@ function generateFile(req: Request, res: Response) {
       // but is piped here in a writable stream which emits a "finish" event.
       res.end();
     });
+
+  /*for (let i = 0; i < 50; i++) {
+    xlsxWriter.addRows(generateRandomData(1000));
+  }*/
 }
 
 export default applicationRoutes;

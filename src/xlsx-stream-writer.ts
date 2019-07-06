@@ -2,7 +2,7 @@ import { SharedStringsMap, XLSX, XlsxStreamWriterOptions } from './xlsx-stream-w
 import { PassThrough, Readable } from 'stream';
 import * as xmlBlobs from './xml/blobs';
 import * as xmlParts from './xml/parts';
-import { escapeXml, getCellAddress, wrapRowsInStream } from './helpers';
+import { escapeXml, getCellAddress, is, wrapRowsInStream } from './helpers';
 import { getStyles } from './styles';
 const JSZip = require('jszip');
 
@@ -100,9 +100,30 @@ export class XlsxStreamWriter {
 
   _getCellXml(value: any, address: any, styleId = 0): string {
     let cellXml;
+
     if (Number.isNaN(value) || value === null || typeof value === 'undefined') cellXml = xmlParts.getStringCellXml('', address, styleId);
-    else if (typeof value === 'number') cellXml = xmlParts.getNumberCellXml(value, address, styleId);
-    else cellXml = this._getStringCellXml(value, address, styleId);
+    else {
+      switch (typeof value) {
+        case 'number':
+          cellXml = xmlParts.getNumberCellXml(value, address, styleId);
+          break;
+        case 'boolean':
+          cellXml = xmlParts.getBooleanCellXml(value, address, styleId);
+          break;
+        case 'object':
+          if (is(Date, value)) {
+            cellXml = this._getStringCellXml(value, address, styleId);
+          } else {
+            const tempValue = JSON.stringify(value);
+            cellXml = this._getStringCellXml(tempValue, address, styleId);
+          }
+          break;
+        default:
+          cellXml = this._getStringCellXml(value, address, styleId);
+          break;
+      }
+    }
+
     return cellXml;
   }
 
