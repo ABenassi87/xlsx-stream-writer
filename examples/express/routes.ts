@@ -5,12 +5,12 @@ import logger from './logger';
 
 const applicationRoutes: Router = Router();
 
-applicationRoutes.get('/generate', generateFile);
+applicationRoutes.get('/download', generateFile);
 
 function generateFile(req: Request, res: Response) {
-  logger.debug('generateFile', req);
-  const rows = generateRandomData(500, true);
-  logger.debug('data generated', rows);
+  logger.info('generateFile');
+  const rows = generateRandomData(50, true);
+  logger.info('data generated', rows.length);
   const xlsxWriter = new XlsxStreamWriter();
 
   xlsxWriter.addRows(rows);
@@ -20,16 +20,24 @@ function generateFile(req: Request, res: Response) {
 
   xlsxWriter
     .getStream()
+    .on('end', function() {
+      logger.info('zip stream ended.');
+    })
     .pipe(res)
     .on('finish', function() {
       // JSZip generates a readable stream with a "end" event,
       // but is piped here in a writable stream which emits a "finish" event.
+      logger.info('zip finished.');
       res.end();
     });
 
-  /*for (let i = 0; i < 50; i++) {
-    xlsxWriter.addRows(generateRandomData(1000));
-  }*/
+  for (let i = 0; i < 1; i++) {
+    const rowsData = generateRandomData(500);
+    logger.info('Added new data.');
+    xlsxWriter.addRows(rowsData);
+  }
+
+  xlsxWriter.commit();
 }
 
 export default applicationRoutes;

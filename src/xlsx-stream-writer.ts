@@ -1,9 +1,11 @@
-import { SharedStringsMap, XLSX, XlsxStreamWriterOptions } from './xlsx-stream-writer.models';
-import { PassThrough, Readable } from 'stream';
+import { SharedStringsMap, UTF8_ENCODING, XLSX, XlsxStreamWriterOptions } from './xlsx-stream-writer.models';
 import * as xmlBlobs from './xml/blobs';
 import * as xmlParts from './xml/parts';
-import { escapeXml, getCellAddress, is, wrapRowsInStream } from './helpers';
+import { sheetFooter, sheetHeader } from './xml/parts';
+import { escapeXml, getCellAddress, is } from './helpers';
 import { getStyles } from './styles';
+import * as streamBuffers from 'stream-buffers';
+
 const JSZip = require('jszip');
 
 const defaultOptions: XlsxStreamWriterOptions = {
@@ -14,21 +16,32 @@ const defaultOptions: XlsxStreamWriterOptions = {
 
 export class XlsxStreamWriter {
   options: XlsxStreamWriterOptions;
-  sheetXmlStream: Readable;
-  sharedStringsXmlStream: Readable;
+  sheetXmlStream: streamBuffers.ReadableStreamBuffer;
+  sharedStringsXmlStream: streamBuffers.ReadableStreamBuffer;
   sharedStringsArr: string[];
   sharedStringsMap: SharedStringsMap;
   sharedStringsHashMap: any;
   xlsx: XLSX;
+  zip: any;
+  currentRowIdx = 0;
 
   constructor(options?: Partial<XlsxStreamWriterOptions>) {
     this.options = Object.assign(defaultOptions, options);
-    this.sheetXmlStream = new Readable();
+    this.sheetXmlStream = new streamBuffers.ReadableStreamBuffer({
+      frequency: 10, // in milliseconds.
+      chunkSize: 2048, // in bytes.
+    });
 
-    this.sharedStringsXmlStream = new Readable();
+    this.sharedStringsXmlStream = new streamBuffers.ReadableStreamBuffer({
+      frequency: 10, // in milliseconds.
+      chunkSize: 2048, // in bytes.
+    });
     this.sharedStringsArr = [];
     this.sharedStringsMap = {};
     this.sharedStringsHashMap = {};
+    this.currentRowIdx = 0;
+
+    this.zip = new JSZip();
 
     this.xlsx = {
       '[Content_Types].xml': cleanUpXml(xmlBlobs.contentTypes),
@@ -38,53 +51,56 @@ export class XlsxStreamWriter {
       'xl/styles.xml': cleanUpXml(getStyles(this.options.styles)),
       'xl/_rels/workbook.xml.rels': cleanUpXml(xmlBlobs.workbookRels),
     };
+
+    this._clearSharedStrings();
+
+    Object.keys(this.xlsx).forEach(key => this.zip.file(key, this.xlsx[key]));
+    // add "xl/worksheets/sheet1.xml"
+    this.zip.file('xl/worksheets/sheet1.xml', this.sheetXmlStream);
+    // add "xl/sharedStrings.xml"
+    this.zip.file('xl/sharedStrings.xml', this.sharedStringsXmlStream);
+    this._addSheetHeader();
+  }
+
+  _addSheetHeader() {
+    this.sheetXmlStream.put(sheetHeader, UTF8_ENCODING);
+  }
+
+  _addRow(row: any, index: number) {
+    const rowString = this._getRowXml(row, index);
+    this.sheetXmlStream.put(rowString, UTF8_ENCODING);
+  }
+
+  _addSheetFooter() {
+    this.sheetXmlStream.put(sheetFooter, UTF8_ENCODING);
+    this.sheetXmlStream.stop();
   }
 
   /**
    * Add rows to xlsx.
-   * @param {Array | Readable} rowsOrStream array of arrays or readable stream of arrays
+   * @param {Array} rows array of arrays.
    * @return {undefined}
    */
-  addRows(rowsOrStream: any[] | Readable) {
-    let rowsStream;
-    if (rowsOrStream instanceof Readable) rowsStream = rowsOrStream;
-    else if (Array.isArray(rowsOrStream)) rowsStream = wrapRowsInStream(rowsOrStream);
-    else throw Error('Argument must be an array of arrays or a readable stream of arrays');
-    const rowsToXml = this._getRowsToXmlTransformStream();
-    const tsToString = this._getToStringTransformStream();
-    // TODO why do we need to call .toString in case we want to inline strings?
-    this.sheetXmlStream = this.options.inlineStrings ? rowsStream.pipe(rowsToXml).pipe(tsToString) : rowsStream.pipe(rowsToXml);
-    this.sharedStringsXmlStream = this._getSharedStringsXmlStream();
+  addRows(rows: any[]) {
+    rows.forEach((row, index) => {
+      const i = this.currentRowIdx + index;
+      this._addRow(row, i);
+    });
+    this.currentRowIdx = this.currentRowIdx + rows.length;
   }
 
-  _getToStringTransformStream(): PassThrough {
-    const ts = new PassThrough();
-    ts._transform = (data, encoding, callback) => {
-      ts.push(data.toString(), 'utf8');
-      callback();
-    };
-    return ts;
+  _serializeSharedString() {
+    this.sharedStringsXmlStream.put(xmlParts.getSharedStringsHeader(this.sharedStringsArr.length));
+    for (let shared of this.sharedStringsArr) {
+      this.sharedStringsXmlStream.put(xmlParts.getSharedStringXml(escapeXml(String(shared))));
+    }
+    this.sharedStringsXmlStream.put(xmlParts.sharedStringsFooter);
+    this.sharedStringsXmlStream.stop();
   }
 
-  _getRowsToXmlTransformStream(): PassThrough {
-    const ts = new PassThrough({ objectMode: true });
-    let c = 0;
-    ts._transform = (data, encoding, callback) => {
-      if (c === 0) {
-        ts.push(xmlParts.sheetHeader, 'utf8');
-      }
-      const rowXml = this._getRowXml(data, c);
-      // console.log(rowXml);
-      ts.push(rowXml.toString(), 'utf8');
-      c++;
-      callback();
-    };
-
-    ts._flush = cb => {
-      ts.push(xmlParts.sheetFooter, 'utf8');
-      cb();
-    };
-    return ts;
+  commit() {
+    this._addSheetFooter();
+    this._serializeSharedString();
   }
 
   _getRowXml(row: any[], rowIndex: number): string {
@@ -144,22 +160,6 @@ export class XlsxStreamWriter {
     return sharedStringIndex;
   }
 
-  _getSharedStringsXmlStream(): Readable {
-    const rs = new Readable();
-    let c = 0;
-    rs._read = () => {
-      if (c === 0) {
-        rs.push(xmlParts.getSharedStringsHeader(this.sharedStringsArr.length));
-      }
-      if (c === this.sharedStringsArr.length) {
-        rs.push(xmlParts.sharedStringsFooter);
-        rs.push(null);
-      } else rs.push(xmlParts.getSharedStringXml(escapeXml(String(this.sharedStringsArr[c]))));
-      c++;
-    };
-    return rs;
-  }
-
   _clearSharedStrings() {
     this.sharedStringsMap = {};
     this.sharedStringsArr = [];
@@ -210,22 +210,11 @@ export class XlsxStreamWriter {
   }
 
   getStream(): NodeJS.ReadableStream {
-    this._clearSharedStrings();
-    const zip = new JSZip();
-    // add all static files
-    Object.keys(this.xlsx).forEach(key => zip.file(key, this.xlsx[key]));
-
-    // add "xl/worksheets/sheet1.xml"
-    zip.file('xl/worksheets/sheet1.xml', this.sheetXmlStream);
-    // add "xl/sharedStrings.xml"
-    zip.file('xl/sharedStrings.xml', this.sharedStringsXmlStream);
-    this._clearSharedStrings();
-
-    return zip.generateNodeStream({
+    return this.zip.generateNodeStream({
       type: 'nodebuffer',
       compression: 'DEFLATE',
       compressionOptions: {
-        level: 4,
+        level: 1,
       },
       streamFiles: true,
     });

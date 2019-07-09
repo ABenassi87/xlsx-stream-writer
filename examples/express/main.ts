@@ -8,7 +8,7 @@ app.get('/', (req, res) => {
   res.send('Hello world!');
 });
 
-app.use('/file', applicationRoutes);
+app.use('/excel', applicationRoutes);
 
 // start the Express server
 app.listen(port, () => {
