@@ -13,6 +13,11 @@ export const getInlineStringCellXml = (s: string, cell: any, styleId = 0) =>
 
 export const getNumberCellXml = (value: number, cell: any, styleId = 0) => `<c r="${cell}" t="n"${$s(styleId)}><v>${value}</v></c>`;
 
+export const getBooleanCellXml = (value: boolean, cell: any, styleId = 0) => `<c r="${cell}" t="b"${$s(styleId)}><v>${value}</v></c>`;
+
+export const getDateCellXml = (value: Date, cell: any, styleId = 0) =>
+  `<c r="${cell}" t="d" ${$s(styleId)}><v>${value.toISOString()}</v></c>`;
+
 export const sheetHeader: string = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <worksheet
     xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
